@@ -18,6 +18,9 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <java.version>17</java.version>
         <build.number>unknown</build.number>
+        <sonar.junit.reportPaths>
+            ${project.basedir}/target/surefire-reports/,${project.basedir}/target/failsafe-reports/
+        </sonar.junit.reportPaths>
     </properties>
 
     <dependencies>
