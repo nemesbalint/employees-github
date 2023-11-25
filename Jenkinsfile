@@ -32,7 +32,7 @@ pipeline {
         stage('Docker') {
             steps {
                 echo "Docker"
-                sh "docker build -f Dockerfile.layered -t ${IMAGE_NAME} ."
+                sh "docker build --platform linux/amd64 -f Dockerfile.layered -t ${IMAGE_NAME} ."
                 sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u=${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
                 sh "docker push ${IMAGE_NAME}"
                 sh "docker tag ${IMAGE_NAME} nemesbalint/employees-github:latest"
