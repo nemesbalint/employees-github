@@ -70,6 +70,15 @@ pipeline {
                 script {
                     env.DEFAULT_LOCAL_TMP = env.WORKSPACE_TMP
                     env.HOME = env.WORKSPACE
+
+                    def isDeployAllowed = input(message: 'Deploy?', parameters: [
+                            [$class: 'ChoiceParameterDefinition', choices: "Yes\nNo", name: 'deploy'],
+                        ])
+                    print("${isDeployAllowed}")
+                    if (isDeployAllowed == 'No') {
+                        currentBuild.result = 'ABORTED'
+                        error('Manual stop.')
+                    }
                 }
                 sshagent(credentials : ['aws-credentials']) {
                     sh "ansible-playbook docker-playbook.yaml -i inventory.yaml -e imageName=${IMAGE_NAME}"
