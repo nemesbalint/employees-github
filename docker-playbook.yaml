@@ -43,7 +43,7 @@
         - ./wait
     - name: Create and start services
       community.docker.docker_compose:
-        project_src: employees-github
+        project_src: employees
       register: output
       environment:
         SERVER_PORT: 80
