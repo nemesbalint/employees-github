@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb
+    expose:
+      - 3306
+    environment:
+      MARIADB_DATABASE: employees
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes' # aposztrófok nélkül boolean true-ként értelmezi
+      MARIADB_USER: employees
+      MARIADB_PASSWORD: employees
+    ports:
+      - 3306:3306
+
+  employees-app:
+    image: ${IMAGE_NAME:-nemesbalint/employees-github:latest}
+    depends_on:
+      - mariadb
+    expose:
+      - 8080
+    environment:
+      SPRING_DATASOURCE_URL: 'jdbc:mariadb://mariadb:3306/employees'
+      SPRING_DATASOURCE_USERNAME: employees
+      SPRING_DATASOURCE_PASSWORD: employees
+      JAVA_TOOL_OPTIONS: '-XX:ReservedCodeCacheSize=140M'
+      BPL_JVM_THREAD_COUNT: 100
+    volumes:
+    - ./wait:/opt/wait
+    entrypoint: ["/opt/wait/wait-for-it.sh", "-t", "120", "mariadb:3306", "--", "java", "org.springframework.boot.loader.JarLauncher"]
+    ports:
+      - ${SERVER_PORT:-8080}:8080

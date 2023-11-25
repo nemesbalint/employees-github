@@ -1,12 +1,12 @@
 pipeline {
 
     environment {
-            //DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+            DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
             VERSION_NUMBER = sh (
                         script: './mvnw help:evaluate -Dexpression=project.version -Dbuild.number=${BUILD_NUMBER} -q -DforceStdout',
                         returnStdout: true).trim()                
             IMAGE_NAME = "nemesbalint/employees-github:${VERSION_NUMBER}"
-            //SONAR_CREDENTIALS = credentials('sonar-credentials')
+            // SONAR_CREDENTIALS = credentials('sonar-credentials')
     }
 
     agent {
@@ -20,23 +20,23 @@ pipeline {
         stage('Commit') {
             steps {
                 echo "Commit stage"
-                //sh "./mvnw -B clean package -Dbuild.number=${BUILD_NUMBER}"
+                sh "./mvnw -B clean package -Dbuild.number=${BUILD_NUMBER}"
             }
         }    
         stage('Acceptance') {
             steps {
                 echo "Acceptance stage"
-                //sh "./mvnw -B integration-test -Dbuild.number=${BUILD_NUMBER}"
+                // sh "./mvnw -B integration-test -Dbuild.number=${BUILD_NUMBER}"
             }
         }
         stage('Docker') {
             steps {
                 echo "Docker"
-                // sh "docker build -f Dockerfile.layered -t ${IMAGE_NAME} ."
-                // sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u=${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
-                // sh "docker push ${IMAGE_NAME}"
-                // sh "docker tag ${IMAGE_NAME} nemesbalint/employees-github:latest"
-                // sh "docker push nemesbalint/employees-github:latest"                
+                sh "docker build -f Dockerfile.layered -t ${IMAGE_NAME} ."
+                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u=${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                sh "docker push ${IMAGE_NAME}"
+                sh "docker tag ${IMAGE_NAME} nemesbalint/employees-github:latest"
+                sh "docker push nemesbalint/employees-github:latest"                
             }
         }
         stage('Quality') {
@@ -57,6 +57,22 @@ pipeline {
                         echo "Code quality"
                         //sh "./mvnw sonar:sonar -Dsonar.host.url=http://host.docker.internal:9000 -Dsonar.login=${SONAR_CREDENTIALS_PSW}"
                     }
+                }
+            }
+        }
+        stage('Deploy') {
+            agent {
+                dockerfile {
+                    filename 'Dockerfile.ansible'
+                }
+            }
+            steps {
+                script {
+                    env.DEFAULT_LOCAL_TMP = env.WORKSPACE_TMP
+                    env.HOME = env.WORKSPACE
+                }
+                sshagent(credentials : ['aws-credentials']) {
+                    sh "ansible-playbook docker-playbook.yaml -i inventory.yaml -e imageName=${IMAGE_NAME}"
                 }
             }
         }
